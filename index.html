@@ -1,0 +1,1389 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Crooms Connect</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<style>
+/* ------------------------------------------------------------------- */
+/* ROOT THEME VARIABLES (Default: DARK MODE)                           */
+/* ------------------------------------------------------------------- */
+:root {
+/* Dynamic Theme Variables */
+--primary-bg: #1a1b2f; /* Main App Background (Dark Blue/Gray) */
+--content-bg: #2b2d42; /* Card/Section Background */
+--text-color: #f8f9fa; /* Light Text Color */
+--shadow: 0 4px 12px rgba(0,0,0,0.4);
+--border-color: rgba(248, 249, 250, 0.1);
+--card-bg-subtle: rgba(248, 249, 250, 0.05);
+/* Fixed Accent Colors */
+--accent-blue: #4cc9f0;
+--accent-green: #80ed99;
+--accent-red: #ef476f;
+--accent-yellow: #ffd166;
+--radius: 15px;
+}
+
+/* ------------------------------------------------------------------- */
+/* LIGHT MODE OVERRIDES                                                */
+/* ------------------------------------------------------------------- */
+.light-mode {
+--primary-bg: #f0f4f8; /* Very Light Gray/Blue */
+--content-bg: #ffffff; /* White Cards */
+--text-color: #1a1b2f; /* Dark Text */
+--shadow: 0 4px 12px rgba(0,0,0,0.15);
+--border-color: rgba(26, 27, 47, 0.1);
+--card-bg-subtle: #f8f9fa; /* Off-white for subtle card areas */
+}
+/* ------------------------------------------------------------------- */
+/* BASE STYLES                                                         */
+/* ------------------------------------------------------------------- */
+body {
+margin: 0;
+font-family: "Segoe UI", Arial, sans-serif;
+background: var(--primary-bg);
+color: var(--text-color);
+padding-top: 65px;
+overflow-x: hidden;
+transition: background-color 0.3s, color 0.3s;
+}
+
+/* SQUIGGLY BACKGROUND LINES (Adapt to current text color for visibility) */
+body::before {
+content: "";
+position: fixed;
+top: 0; left: 0;
+width: 100%; height: 100%;
+/* SVG stroke color references the dynamic --text-color variable */
+background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="200" height="200"><path d="M0 50 Q50 0 100 50 T200 50 V200 H0 Z" fill="none" stroke="var(--text-color, rgba(255,255,255,0.05))" stroke-width="2"/></svg>');
+background-size: 200px 200px;
+z-index: -1;
+/* Opacity is adjusted dynamically based on theme contrast */
+opacity: var(--text-color-opacity, 0.05);
+}
+.light-mode::before {
+opacity: 0.1; /* Make squiggles slightly more visible on light background */
+}
+/* HEADER */
+.header {
+display: flex;
+justify-content: space-between;
+align-items: center;
+padding: 10px 15px;
+/* Use a semi-transparent primary background for the header */
+background: color-mix(in srgb, var(--primary-bg) 90%, transparent);
+backdrop-filter: blur(10px);
+box-shadow: var(--shadow);
+position: fixed;
+top: 0;
+left: 0;
+width: 100%;
+z-index: 100;
+transition: top 0.3s, background 0.3s;
+}
+.header .title-text {
+font-weight: bold;
+font-size: clamp(16px, 4vw, 20px);
+color: var(--accent-blue);
+flex-shrink: 0;
+}
+.header .user-id-display {
+font-size: 10px;
+color: var(--text-color);
+opacity: 0.6;
+padding-left: 10px;
+max-width: 40%;
+overflow: hidden;
+text-overflow: ellipsis;
+white-space: nowrap;
+}
+/* NAVIGATION BUTTONS */
+.left-box {
+display: flex;
+justify-content: center;
+flex-wrap: wrap;
+gap: 15px;
+margin: 25px auto;
+max-width: 900px;
+}
+.left-box button {
+background: var(--content-bg);
+color: var(--text-color);
+border: 1px solid var(--border-color);
+border-radius: var(--radius);
+padding: 12px 20px;
+cursor: pointer;
+font-size: 16px;
+font-weight: bold;
+/* Adding a subtle glowing transition effect */
+transition: 0.3s ease-in-out;
+/* Subtle shadow/border effect */
+box-shadow: inset 0 1px 3px rgba(0,0,0,0.1), 0 2px 4px rgba(0,0,0,0.1);
+}
+.left-box button:hover {
+/* Using a radial gradient effect for the 'light' feel */
+background: radial-gradient(circle at top left, var(--accent-blue) 10%, var(--content-bg) 100%);
+color: var(--primary-bg);
+transform: translateY(-3px);
+/* More pronounced shadow with a subtle blue glow */
+box-shadow: 0 8px 20px rgba(76, 201, 240, 0.4), 0 0 15px rgba(76, 201, 240, 0.3);
+}
+.left-box button.active {
+/* Active state uses a strong blue gradient */
+background: linear-gradient(45deg, var(--accent-blue), #2a8dff);
+color: var(--primary-bg);
+/* Added stronger shadow for active state */
+box-shadow: 0 4px 10px rgba(76, 201, 240, 0.6);
+transform: none; /* No lift when active */
+}
+/* TIMER STYLES (Pulse/Blink removed, replaced with color logic in JS) */
+.timer-text.timer-active {
+/* No animation */
+display: inline-block;
+font-weight: bolder;
+transition: color 0.3s;
+/* Default active color (will be overridden by JS for green/red) */
+color: var(--accent-red); /* Placeholder color, JS overrides this for green/red based on time left */
+}
+/* TAB CONTENT */
+.tab-content {
+display: none;
+animation: fadeInUp 0.7s ease;
+}
+.tab-content.active {
+display: block;
+}
+/* SECTION CONTAINER (Uses Content BG) */
+section, .right-box {
+background: var(--content-bg);
+border-radius: var(--radius);
+padding: 25px;
+margin: 30px auto;
+max-width: 900px;
+box-shadow: var(--shadow);
+border: 1px solid var(--border-color);
+position: relative;
+overflow: hidden;
+transition: background-color 0.3s, border-color 0.3s;
+}
+/* SQUIGGLES INSIDE CARDS (Less visible) */
+section::before {
+content: "";
+position: absolute;
+top: 0; left: 0; right: 0; bottom: 0;
+background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="200" height="200"><path d="M0 100 Q50 50 100 100 T200 100 V200 H0 Z" fill="none" stroke="var(--text-color, rgba(255,255,255,0.05))" stroke-width="2"/></svg>');
+background-size: 200px 200px;
+opacity: 0.1;
+z-index: 0;
+}
+section h1, section h2, section p, section .disclaimer-point {
+position: relative;
+z-index: 1;
+}
+section h1 { color: var(--accent-blue); }
+section h2 { color: var(--accent-green); }
+/* CARDS INSIDE SECTIONS */
+.card-grid {
+display: grid;
+grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+gap: 20px;
+margin-top: 20px;
+}
+.card {
+background: var(--card-bg-subtle);
+border: 1px solid var(--border-color);
+padding: 20px;
+border-radius: var(--radius);
+box-shadow: 0 2px 8px rgba(0,0,0,0.2); /* Slightly weaker card shadow */
+transition: 0.3s;
+position: relative;
+overflow: hidden;
+text-align: center;
+}
+.card:hover {
+transform: translateY(-5px) scale(1.03);
+box-shadow: var(--shadow);
+}
+.card .icon {
+font-size: 35px;
+margin-bottom: 10px;
+display: block;
+}
+/* RIGHT BOX */
+.right-box {
+width: 280px;
+margin: 0 auto;
+animation: fadeIn 1s ease;
+}
+.right-box h2 {
+text-align: center;
+color: var(--accent-yellow);
+}
+.right-box .section {
+margin-top: 10px;
+background: var(--card-bg-subtle);
+padding: 10px;
+border-radius: var(--radius);
+text-align: center;
+font-weight: bold;
+transition: background-color 0.3s;
+}
+.right-box .info p {
+margin: 8px 0;
+cursor: pointer;
+transition: color 0.2s;
+}
+.right-box .info p:hover {
+color: var(--accent-blue);
+}
+/* FOOTER */
+footer {
+text-align: center;
+padding: 20px;
+background: var(--primary-bg);
+margin-top: 40px;
+color: var(--text-color);
+font-size: 14px;
+transition: background-color 0.3s, color 0.3s;
+}
+footer a {
+color: var(--accent-blue);
+text-decoration: none;
+cursor: pointer;
+}
+
+/* THEME BUTTON STYLES (Restored Gradients/Lighting) */
+.theme-button {
+width: 100%;
+padding: 15px;
+margin-top: 10px;
+font-weight: bold;
+border: none;
+border-radius: 10px;
+cursor: pointer;
+transition: transform 0.2s, opacity 0.3s, background-color 0.3s, box-shadow 0.3s;
+box-shadow: 0 4px 6px rgba(0,0,0,0.2);
+}
+#dark-mode-button {
+background-color: var(--content-bg);
+color: var(--text-color);
+border: 2px solid var(--accent-blue);
+background-image: linear-gradient(135deg, var(--content-bg), var(--content-bg) 80%, rgba(76, 201, 240, 0.1));
+}
+#dark-mode-button.active, #dark-mode-button:hover {
+background-image: linear-gradient(135deg, var(--accent-blue), #2a8dff); /* Blue Gradient */
+color: var(--primary-bg);
+transform: translateY(-2px);
+box-shadow: 0 4px 15px rgba(76, 201, 240, 0.6);
+}
+#light-mode-button {
+background-color: var(--content-bg);
+color: var(--text-color);
+border: 2px solid var(--accent-yellow);
+background-image: linear-gradient(135deg, var(--content-bg), var(--content-bg) 80%, rgba(255, 209, 102, 0.1));
+}
+#light-mode-button.active, #light-mode-button:hover {
+background-image: linear-gradient(135deg, var(--accent-yellow), #ffc34d); /* Yellow Gradient */
+color: var(--primary-bg);
+transform: translateY(-2px);
+box-shadow: 0 4px 15px rgba(255, 209, 102, 0.6);
+}
+/* ANIMATIONS AND MODALS (Kept for completeness) */
+@keyframes fadeInUp {
+from {opacity: 0; transform: translateY(20px);}
+to {opacity: 1; transform: translateY(0);}
+}
+@keyframes fadeIn {
+from {opacity: 0;}
+to {opacity: 1;}
+}
+
+.modal-overlay {
+position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+background-color: rgba(0, 0, 0, 0.85); backdrop-filter: blur(5px);
+z-index: 1000; display: none; justify-content: center; align-items: center;
+opacity: 0; transition: opacity 0.3s ease;
+}
+.modal-overlay.show { display: flex; opacity: 1; }
+.modal-content {
+background: var(--content-bg); border-radius: var(--radius);
+padding: 40px 30px; max-width: 600px; width: 90%; max-height: 80vh;
+overflow-y: auto; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.8);
+border: 2px solid var(--accent-red); position: relative;
+transform: scale(0.9); transition: transform 0.3s ease;
+}
+.modal-overlay.show .modal-content { transform: scale(1); }
+.close-button {
+position: absolute; top: 15px; right: 15px; background: none; border: none;
+color: var(--text-color); font-size: 24px; cursor: pointer; line-height: 1;
+padding: 5px; opacity: 0.7; transition: opacity 0.2s, color 0.2s;
+}
+.close-button:hover { opacity: 1; color: var(--accent-red); }
+
+/* Settings Form Styles */
+.settings-form {
+text-align: left;
+margin-top: 15px;
+}
+.settings-form label {
+display: block;
+margin-top: 10px;
+margin-bottom: 5px;
+font-size: 14px;
+font-weight: bold;
+color: var(--accent-green); /* Use accent color for label */
+}
+.settings-form input {
+width: 100%;
+padding: 8px;
+border-radius: 5px;
+border: 1px solid var(--border-color);
+background: var(--primary-bg);
+color: var(--text-color);
+font-size: 14px;
+transition: border-color 0.3s;
+}
+.settings-form input:focus {
+outline: none;
+border-color: var(--accent-blue);
+}
+.save-settings-button {
+margin-top: 20px;
+width: 100%;
+padding: 10px;
+border: none;
+border-radius: 10px;
+background: linear-gradient(45deg, var(--accent-green), #4CAF50);
+color: var(--primary-bg);
+font-weight: bold;
+cursor: pointer;
+transition: transform 0.2s, box-shadow 0.3s;
+box-shadow: 0 4px 8px rgba(128, 237, 153, 0.4);
+}
+.save-settings-button:hover {
+transform: translateY(-2px);
+box-shadow: 0 6px 12px rgba(128, 237, 153, 0.6);
+}
+
+/* Reminder list styles */
+#active-reminders-list {
+list-style: none;
+padding: 0;
+}
+#active-reminders-list li {
+padding: 8px 0;
+border-bottom: 1px dashed var(--border-color);
+display: flex;
+justify-content: space-between;
+align-items: center;
+font-size: 15px;
+}
+#active-reminders-list li:last-child {
+border-bottom: none;
+}
+
+/* NEW: In-App Notification Styling for slide-in effect */
+#in-app-notification {
+position: fixed;
+top: 20px;
+right: 20px;
+width: 300px;
+background: var(--accent-blue);
+color: var(--primary-bg);
+padding: 15px;
+border-radius: var(--radius);
+box-shadow: 0 6px 20px rgba(0,0,0,0.5);
+z-index: 1100; /* Above modals */
+transform: translateX(120%); /* Start off-screen to the right */
+/* Springy slide-in animation */
+transition: transform 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+#in-app-notification.show {
+transform: translateX(0); /* Slide into view */
+}
+
+#in-app-notification h4 {
+margin: 0 0 5px 0;
+font-weight: bold;
+font-size: 16px;
+color: var(--primary-bg);
+display: flex;
+align-items: center;
+}
+#in-app-notification h4 span {
+margin-right: 8px;
+font-size: 20px;
+}
+
+#in-app-notification p {
+margin: 0;
+font-size: 14px;
+}
+</style>
+</head>
+<body id="app-body">
+<div class="header">
+<div class="flex items-center">
+<span class="title-text">CROOMS CONNECT</span>
+<span id="userIdDisplay" class="user-id-display">Local Theme Storage Active</span>
+</div>
+<span>ALPHA</span>
+</div>
+<div class="left-box">
+<button data-tab="home">Home</button>
+<button data-tab="study">Study Tools</button>
+<button data-tab="community">Community</button>
+<button data-tab="polls">Polls</button>
+<button data-tab="games">Games</button>
+<button data-tab="settings">Settings</button>
+</div>
+<div class="right-box">
+<div class="section" id="info-section" style="color: var(--accent-yellow); font-weight: bold;">Loading current time and day type...</div>
+<div class="section" id="period-timer">Loading Period Timer...</div>
+<div class="section" id="current-lunch-display">Loading Lunch...</div>
+<div class="info">
+<p data-food="Mango">M – Mango</p>
+<p data-food="Mustard">T – Mustard</p>
+<p data-food="Still Water">W – Still Water</p>
+<p data-food="Burgers">T – 41 Burgers</p>
+<p data-food="Chickens">F – 67 Chickens</p>
+</div>
+</div>
+<div class="tab-content active" id="home">
+<section>
+<h1>Welcome to Crooms Connect</h1>
+<p>Your student hub with resources, schedules, and tools.</p>
+<div class="card-grid">
+<div class="card"><span class="icon"> 📰 </span><h3>News</h3><p>Latest announcements from campus.</p></div>
+<div class="card" onclick="window.location.href='events.html'" style="cursor: pointer;">
+<span class="icon"> 📅 </span>
+<h3>Events</h3>
+<p>See what’s happening this week.</p>
+</div>
+</div>
+
+</section>
+</div>
+<div class="tab-content" id="study">
+<section>
+<h1>Study Tools</h1>
+<p>Helpful tools to keep you learning.</p>
+<div class="card-grid">
+<div class="card"><span class="icon"> 📝 </span><h3>Flashcards</h3><p>Review terms quickly.</p></div>
+<div class="card"><span class="icon"> ❓ </span><h3>Practice Quizzes</h3><p>Test your knowledge.</p></div>
+</div>
+</section>
+</div>
+<div class="tab-content" id="community">
+<section>
+<h1>Community</h1>
+<p>Connect with classmates and teachers.</p>
+<div class="card-grid">
+<div class="card"><span class="icon"> 👥 </span><h3>Clubs</h3><p>Find and join school clubs.</p></div>
+<div class="card"><span class="icon"> 💬 </span><h3>Forums</p><p>Discuss topics with peers.</p></div>
+</div>
+</section>
+</div>
+<div class="tab-content" id="polls">
+<section>
+<h1>Polls</h1>
+<p>Vote on important topics.</p>
+<div class="card-grid">
+<div class="card"><span class="icon"> 🗳️ </span><h3>Current Poll</h3><p>Vote on this week’s topic.</p></div>
+<div class="card"><span class="icon"> 📊 </span><h3>Results</h3><p>See community votes.</p></div>
+</div>
+</section>
+</div>
+<div class="tab-content" id="games">
+<section>
+<h1>Games</h1>
+<p>Fun mini-games to enjoy during breaks.</p>
+<div class="card-grid">
+<div class="card"><span class="icon"> 🎮 </span><h3>Trivia</h3><p>Test your knowledge in quick rounds.</p></div>
+<div class="card"><span class="icon"> 🧩 </span><h3>Puzzle</h3><p>Relax and challenge your mind.</p></div>
+</div>
+</section>
+</div>
+<div class="tab-content" id="settings">
+<section>
+<h1>User Settings & Customization</h1>
+<p>Personalize your experience. Your selections are saved locally.</p>
+<div class="card-grid">
+<div class="card theme-selector-card">
+<span class="icon"> 🌓 </span>
+<h3>Appearance</h3>
+<p style="margin-bottom: 20px; font-size: 14px;">Toggle between Dark and Light mode.</p>
+
+<div class="flex flex-col space-y-4">
+<button id="dark-mode-button" class="theme-button">
+<span class="icon"> 🌙 </span> Dark Mode
+</button>
+<button id="light-mode-button" class="theme-button">
+<span class="icon"> ☀️ </span> Light Mode
+</button>
+</div>
+<div id="messageBox" class="p-3 mt-4 text-center rounded-lg font-medium hidden" style="background-color: var(--primary-bg); color: var(--text-color);"></div>
+</div>
+
+<div class="card period-names-card">
+<span class="icon"> 📚 </span>
+<h3>Period Names</h3>
+<p style="margin-bottom: 10px; font-size: 14px;">Personalize the names of your classes.</p>
+
+<form class="settings-form" id="period-names-form">
+<button type="submit" class="save-settings-button">Save Period Names</button>
+</form>
+<div id="periodMessage" class="p-3 mt-4 text-center rounded-lg font-medium hidden" style="background-color: var(--primary-bg); color: var(--text-color);"></div>
+</div>
+
+<div class="card lunch-names-card">
+<span class="icon"> 🍔 </span>
+<h3>Lunch Periods</h3>
+<p style="margin-bottom: 10px; font-size: 14px;">Set which lunch you have for each schedule type.</p>
+
+<form class="settings-form" id="lunch-names-form">
+<label for="lunch-5th_Period_A">5th Period Lunch (Usually A Lunch)</label>
+<input type="text" id="lunch-5th_Period_A" name="5th Period A" value="A Lunch" placeholder="A Lunch">
+
+<label for="lunch-5th_Period_B">5th Period Lunch (Usually B Lunch)</label>
+<input type="text" id="lunch-5th_Period_B" name="5th Period B" value="B Lunch" placeholder="B Lunch">
+
+<label for="lunch-Homeroom_A">Homeroom Lunch (Wednesday A Lunch)</label>
+<input type="text" id="lunch-Homeroom_A" name="Homeroom A" value="A Lunch" placeholder="A Lunch">
+
+<label for="lunch-Homeroom_B">Homeroom Lunch (Wednesday B Lunch)</label>
+<input type="text" id="lunch-Homeroom_B" name="Homeroom B" value="B Lunch" placeholder="B Lunch">
+
+<button type="submit" class="save-settings-button">Save Lunch Periods</button>
+</form>
+<div id="lunchMessage" class="p-3 mt-4 text-center rounded-lg font-medium hidden" style="background-color: var(--primary-bg); color: var(--text-color);"></div>
+</div>
+
+<div class="card" id="notifications-card" style="cursor: pointer;">
+<span class="icon"> 🔔 </span>
+<h3>Reminders</h3>
+<p>Set up alerts for important events.</p>
+<button id="test-notification-button" style="margin-top: 10px; background: var(--accent-blue); color: var(--primary-bg); border: none; padding: 5px 10px; border-radius: 5px; cursor: pointer; font-size: 12px; font-weight: bold;">Test Slide-in</button>
+</div>
+
+
+<div class="card"><span class="icon"> 🔑 </span><h3>Account</h3><p>Privacy and security options.</p></div>
+<div class="card"><span class="icon"> ⚙️ </span><h3>Display</h3><p>Adjust font size and layout.</p></div>
+</div>
+</section>
+</div>
+<div id="legal-modal" class="modal-overlay">
+<div class="modal-content">
+<button class="close-button" id="close-modal-button">&times;</button>
+<h1>Legal Disclaimer <span style="font-size: 14px; color: var(--text-color);"> (Last Updated: October 2nd, 2025)</span></h1>
+
+<div class="disclaimer-point">
+<strong>1. General Information & Accuracy</strong>
+<p>The information provided by Crooms Connect is for general informational purposes only. All information is provided in good faith;
+however, we make no representation or warranty of any kind regarding the accuracy, adequacy, validity, reliability, availability, or completeness of any information, including schedules or event times.</p>
+</div>
+<div class="disclaimer-point">
+<strong>2. Educational Purpose Only</strong>
+<p>This platform is intended solely as an educational and communication tool for students.
+It is not an official source for administrative, financial, or legal decisions.
+Always refer to official school publications and staff for critical information.</p>
+</div>
+<div class="disclaimer-point">
+<strong>3. External Links Disclaimer</strong>
+<p>The platform may contain links to external websites that are not provided or maintained by or in any way affiliated with Crooms Connect.
+Please note that we do not guarantee the accuracy, relevance, timeliness, or completeness of any information on these external websites.</p>
+</div>
+<div class="disclaimer-point">
+<strong>4. "AS IS" and "AS AVAILABLE" Disclaimer</strong>
+<p>The platform is provided "AS IS" and "AS AVAILABLE" and with all faults and defects without warranty of any kind.</p>
+</div>
+<div class="disclaimer-point">
+<strong>5. User-Generated Content</strong>
+<p>Users are responsible for any content they post. We are not responsible for user-generated content, but we reserve the right to remove any content we deem inappropriate or harmful.</p></div>
+<div class="disclaimer-point">
+<strong>6. Limitation of Liability</strong>
+<p>Under no circumstance shall we be liable for any loss or damage of any kind incurred as a result of the use of the platform or reliance on any information provided.
+Your use of the platform and your reliance on any information is solely at your own risk.</p>
+</div>
+<div class="disclaimer-point">
+<strong>7. Indemnification Clause</strong>
+<p>You agree to defend, indemnify, and hold harmless Crooms Connect, its developers, and affiliates from and against any claims, damages, obligations, losses, liabilities, costs, or debt arising from: (a) your use of and access to the platform;
+(b) your violation of any term of this Disclaimer; or (c) any content you post on the platform.</p>
+</div>
+<div class="disclaimer-point">
+<strong>8. Intellectual Property (IP)</strong>
+<p>All original content, features, and functionality (excluding user-generated content) are and will remain the exclusive property of Crooms Connect.
+By posting User-Generated Content, you grant Crooms Connect a worldwide, non-exclusive, royalty-free license to use, reproduce, and display that content on the platform.</p>
+</div>
+<div class="disclaimer-point">
+<strong>9. User Conduct & Termination</strong>
+<p>We reserve the right, but not the obligation, to monitor and remove any User-Generated Content that we deem inappropriate, illegal, or in violation of these terms.
+We may terminate or suspend access to our platform immediately, without prior notice or liability, for any reason, including without limitation if you breach this Disclaimer.</p>
+</div>
+</div>
+</div>
+
+<div id="reminder-modal" class="modal-overlay">
+<div class="modal-content">
+<button class="close-button" id="close-reminder-modal-button">&times;</button>
+<h1>Set New Reminder</h1>
+<form class="settings-form" id="reminder-form">
+<label for="reminder-title">Title</label>
+<input type="text" id="reminder-title" required placeholder="e.g., Study for Math Test">
+
+<label for="reminder-date">Date</label>
+<input type="date" id="reminder-date" required>
+
+<label for="reminder-time">Time</label>
+<input type="time" id="reminder-time" required>
+
+<button type="submit" class="save-settings-button" style="background: linear-gradient(45deg, var(--accent-blue), #2a8dff);">Create Reminder</button>
+
+<div id="reminder-list-container" style="margin-top: 20px; border-top: 1px solid var(--border-color); padding-top: 15px;">
+<h3 style="color: var(--accent-yellow); margin-bottom: 10px;">Scheduled Reminders</h3>
+<ul id="active-reminders-list"></ul>
+</div>
+<div id="reminder-message" class="p-3 mt-4 text-center rounded-lg font-medium hidden" style="background-color: var(--primary-bg); color: var(--text-color);"></div>
+</form>
+</div>
+</div>
+
+<div id="in-app-notification">
+<h4><span>🔔</span> Reminder Fired</h4>
+<p id="notification-message">Your reminder message goes here.</p>
+</div>
+
+
+<footer>
+<p>© 2025 Crooms Connect | <a id="open-legal-modal">Legal Disclaimer</a></p>
+</footer>
+<img id="preview"/>
+<script>
+// --- SCHEDULE DATA ---
+const defaultSchedules = {
+"Monday": [
+{ period: "1st Period", start: "07:20", end: "08:13" },
+{ period: "2nd Period", start: "08:18", end: "09:10" },
+{ period: "3rd Period", start: "09:15", end: "10:05" },
+{ period: "4th Period", start: "10:10", end: "11:02" },
+{ period: "5th Period A", start: "11:07", end: "11:57" }, // Class
+{ period: "5th Period B", start: "11:57", end: "12:27" }, // Lunch
+{ period: "6th Period", start: "12:32", end: "13:24" },
+{ period: "7th Period", start: "13:29", end: "14:20" }
+],
+"Tuesday": [
+{ period: "1st Period", start: "07:20", end: "08:13" },
+{ period: "2nd Period", start: "08:18", end: "09:10" },
+{ period: "3rd Period", start: "09:15", end: "10:05" },
+{ period: "4th Period", start: "10:10", end: "11:02" },
+{ period: "5th Period A", start: "11:07", end: "11:57" }, // Class
+{ period: "5th Period B", start: "11:57", end: "12:27" }, // Lunch
+{ period: "6th Period", start: "12:32", end: "13:24" },
+{ period: "7th Period", start: "13:29", end: "14:20" }
+],
+"Wednesday": [
+{ period: "2nd Period", start: "07:20", end: "08:49" },
+{ period: "4th Period", start: "08:55", end: "10:21" },
+{ period: "Homeroom B", start: "10:27", end: "11:17" }, // Lunch
+{ period: "Homeroom A", start: "11:17", end: "11:47" }, // Class/Homeroom
+{ period: "6th Period", start: "11:53", end: "13:20" }
+],
+"Thursday": [
+{ period: "1st Period", start: "07:20", end: "08:55" },
+{ period: "3rd Period", start: "09:01", end: "10:33" },
+{ period: "5th Period B", start: "10:39", end: "12:11" }, // Class
+{ period: "5th Period A", start: "12:11", end: "12:41" }, // Lunch
+{ period: "7th Period", start: "12:47", end: "14:20" }
+],
+"Friday": [
+{ period: "1st Period", start: "07:20", end: "08:13" },
+{ period: "2nd Period", start: "08:18", end: "09:10" },
+{ period: "3rd Period", start: "09:15", end: "10:05" },
+{ period: "4th Period", start: "10:10", end: "11:02" },
+{ period: "5th Period A", start: "11:07", end: "11:57" }, // Class
+{ period: "5th Period B", start: "11:57", end: "12:27" }, // Lunch
+{ period: "6th Period", start: "12:32", end: "13:24" },
+{ period: "7th Period", start: "13:29", end: "14:20" }
+]
+};
+let schedules = JSON.parse(JSON.stringify(defaultSchedules)); // Working copy of schedules
+
+// --- DOM Elements ---
+const appBody = document.getElementById('app-body');
+const darkModeButton = document.getElementById('dark-mode-button');
+const lightModeButton = document.getElementById('light-mode-button');
+const messageBox = document.getElementById('messageBox');
+const tabs = document.querySelectorAll(".tab-content");
+const homeButton = document.querySelector(".left-box button[data-tab='home']");
+const periodNamesForm = document.getElementById('period-names-form');
+const periodMessageBox = document.getElementById('periodMessage');
+const lunchNamesForm = document.getElementById('lunch-names-form');
+const lunchMessageBox = document.getElementById('lunchMessage');
+const currentLunchDisplay = document.getElementById('current-lunch-display');
+const notificationsCard = document.getElementById('notifications-card');
+const reminderModal = document.getElementById('reminder-modal');
+const reminderForm = document.getElementById('reminder-form');
+const reminderMessageBox = document.getElementById('reminder-message');
+const activeRemindersList = document.getElementById('active-reminders-list');
+const closeReminderModalButton = document.getElementById('close-reminder-modal-button');
+const inAppNotification = document.getElementById('in-app-notification');
+const testNotificationButton = document.getElementById('test-notification-button'); // NEW
+
+// --- CONSTANTS ---
+const THEME_STORAGE_KEY = 'croomsConnectThemeMode';
+const NAMES_STORAGE_KEY = 'croomsConnectPeriodNames';
+const LUNCH_STORAGE_KEY = 'croomsConnectLunchNames';
+const REMINDER_STORAGE_KEY = 'croomsConnectReminders';
+const DEFAULT_MODE = 'dark'; // Set the default to dark
+
+// Map of period names (keys) to their default associated lunch names (values)
+const DEFAULT_LUNCH_MAP = {
+"5th Period B": "B Lunch", // Standard Lunch time (M, T, F)
+"5th Period A": "A Lunch", // Standard Lunch time (Thur)
+"Homeroom B": "B Lunch", // Wednesday Lunch time
+"Homeroom A": "A Lunch" // Wednesday Lunch time
+};
+
+// --- GENERAL UTILITIES ---
+const applyMode = (mode) => {
+if (mode === 'light') {
+appBody.classList.add('light-mode');
+} else {
+appBody.classList.remove('light-mode');
+}
+updateActiveButton(mode);
+};
+
+const updateActiveButton = (mode) => {
+darkModeButton.classList.remove('active');
+lightModeButton.classList.remove('active');
+
+if (mode === 'dark') {
+darkModeButton.classList.add('active');
+} else {
+lightModeButton.classList.add('active');
+}
+};
+
+const saveModePreference = (mode) => {
+try {
+localStorage.setItem(THEME_STORAGE_KEY, mode);
+applyMode(mode);
+showMessageBox(messageBox, `${mode.charAt(0).toUpperCase() + mode.slice(1)} Mode activated and saved!`, 'success');
+} catch (error) {
+console.error("Error saving mode preference to localStorage:", error);
+showMessageBox(messageBox, "Failed to save mode locally.", 'error');
+}
+};
+
+const loadModePreference = () => {
+try {
+const savedMode = localStorage.getItem(THEME_STORAGE_KEY);
+applyMode(savedMode || DEFAULT_MODE);
+} catch (error) {
+console.error("Error loading mode preference from localStorage:", error);
+applyMode(DEFAULT_MODE);
+}
+};
+
+const showMessageBox = (box, message, type) => {
+box.textContent = message;
+box.classList.remove('hidden');
+box.style.backgroundColor = type === 'success' ? 'var(--accent-green)' : 'var(--accent-red)';
+box.style.color = 'var(--primary-bg)';
+
+setTimeout(() => box.classList.add('hidden'), 3000);
+};
+
+// --- PERIOD NAME UTILITIES ---
+
+const getUniquePeriodKeys = () => {
+const keys = new Set();
+for (const day in defaultSchedules) {
+defaultSchedules[day].forEach(block => keys.add(block.period));
+}
+return Array.from(keys).filter(key => !DEFAULT_LUNCH_MAP.hasOwnProperty(key));
+};
+
+const loadPeriodNames = () => {
+try {
+const savedNames = localStorage.getItem(NAMES_STORAGE_KEY);
+if (savedNames) {
+const customNames = JSON.parse(savedNames);
+for (const day in schedules) {
+schedules[day] = defaultSchedules[day].map(block => {
+const originalKey = block.period;
+const customName = customNames[originalKey];
+if (customName) {
+return { ...block, period: customName };
+}
+return block;
+});
+}
+}
+} catch (error) {
+console.error("Error loading period names from localStorage:", error);
+}
+};
+
+const populatePeriodForm = () => {
+const uniqueKeys = getUniquePeriodKeys();
+let savedNames = {};
+try {
+const savedNamesStr = localStorage.getItem(NAMES_STORAGE_KEY);
+if (savedNamesStr) {
+savedNames = JSON.parse(savedNamesStr);
+}
+} catch (e) { /* ignore parse errors */ }
+
+let formContent = '';
+uniqueKeys.sort().forEach(key => {
+const currentName = savedNames[key] || key;
+formContent += `
+<label for="name-${key.replace(/\s/g, '_')}">${key}</label>
+<input type="text" id="name-${key.replace(/\s/g, '_')}" name="${key}" value="${currentName}" placeholder="${key}">
+`;
+});
+
+let existingButton = periodNamesForm.querySelector('.save-settings-button');
+let buttonHTML = existingButton ? existingButton.outerHTML : '<button type="submit" class="save-settings-button">Save Period Names</button>';
+
+periodNamesForm.innerHTML = formContent + buttonHTML;
+
+periodNamesForm.removeEventListener('submit', handlePeriodFormSubmit);
+periodNamesForm.addEventListener('submit', handlePeriodFormSubmit);
+};
+
+const handlePeriodFormSubmit = (e) => {
+e.preventDefault();
+const formData = new FormData(periodNamesForm);
+const customNames = {};
+const defaultKeys = getUniquePeriodKeys();
+
+for (const [originalKey, customName] of formData.entries()) {
+const trimmedName = customName.trim();
+if (defaultKeys.includes(originalKey) && trimmedName.length > 0) {
+if (trimmedName !== originalKey) {
+customNames[originalKey] = trimmedName;
+}
+}
+}
+
+try {
+localStorage.setItem(NAMES_STORAGE_KEY, JSON.stringify(customNames));
+schedules = JSON.parse(JSON.stringify(defaultSchedules));
+loadPeriodNames();
+updatePeriodTimer();
+showMessageBox(periodMessageBox, 'Period names saved successfully! Restarting timer...', 'success');
+} catch (error) {
+console.error("Error saving period names to localStorage:", error);
+showMessageBox(periodMessageBox, 'Failed to save period names.', 'error');
+}
+};
+
+// --- LUNCH NAME UTILITIES ---
+
+const loadLunchNames = () => {
+let customLunchMap = {};
+try {
+const savedNamesStr = localStorage.getItem(LUNCH_STORAGE_KEY);
+if (savedNamesStr) {
+customLunchMap = JSON.parse(savedNamesStr);
+}
+} catch (e) { /* ignore parse errors */ }
+
+for (const key in DEFAULT_LUNCH_MAP) {
+const input = document.getElementById(`lunch-${key.replace(/\s/g, '_')}`);
+if (input) {
+input.value = customLunchMap[key] || DEFAULT_LUNCH_MAP[key];
+}
+}
+return customLunchMap;
+};
+
+const handleLunchFormSubmit = (e) => {
+e.preventDefault();
+const formData = new FormData(lunchNamesForm);
+const customLunchMap = {};
+
+for (const [originalKey, customName] of formData.entries()) {
+const trimmedName = customName.trim();
+if (trimmedName.length > 0 && DEFAULT_LUNCH_MAP.hasOwnProperty(originalKey)) {
+if (trimmedName !== DEFAULT_LUNCH_MAP[originalKey]) {
+customLunchMap[originalKey] = trimmedName;
+}
+}
+}
+
+try {
+localStorage.setItem(LUNCH_STORAGE_KEY, JSON.stringify(customLunchMap));
+updateLunchDisplay();
+showMessageBox(lunchMessageBox, 'Lunch periods saved successfully!', 'success');
+} catch (error) {
+console.error("Error saving lunch names to localStorage:", error);
+showMessageBox(lunchMessageBox, 'Failed to save lunch periods.', 'error');
+}
+};
+
+const updateLunchDisplay = () => {
+const now = new Date();
+const dayName = now.toLocaleDateString("en-US", { weekday: "long" });
+const schedule = schedules[dayName] || [];
+const customLunchMap = loadLunchNames();
+
+let currentLunch = "No Scheduled Lunch Today";
+let foundLunch = false;
+
+for (let block of defaultSchedules[dayName] || []) {
+const originalPeriodKey = block.period;
+
+if (DEFAULT_LUNCH_MAP.hasOwnProperty(originalPeriodKey)) {
+const lunchName = customLunchMap[originalPeriodKey] || DEFAULT_LUNCH_MAP[originalPeriodKey];
+const workingBlock = schedule.find(b => b.start === block.start && b.end === block.end);
+
+if (workingBlock) {
+currentLunch = `${lunchName} (${workingBlock.start} - ${workingBlock.end})`;
+foundLunch = true;
+break;
+}
+}
+}
+
+currentLunchDisplay.innerText = foundLunch ? currentLunch : "No Scheduled Lunch Today";
+}
+
+// --- REMINDER UTILITIES (MODIFIED FOR INTERVAL CHECK) ---
+
+const loadReminders = () => {
+try {
+const remindersStr = localStorage.getItem(REMINDER_STORAGE_KEY);
+// We no longer filter out past reminders here, the interval checker will handle cleanup
+return remindersStr ? JSON.parse(remindersStr) : [];
+} catch (e) {
+console.error("Error loading reminders:", e);
+return [];
+}
+};
+
+const saveReminders = (reminders) => {
+try {
+localStorage.setItem(REMINDER_STORAGE_KEY, JSON.stringify(reminders));
+} catch (e) {
+console.error("Error saving reminders:", e);
+}
+};
+
+const deleteReminder = (id) => {
+let reminders = loadReminders();
+reminders = reminders.filter(r => r.id !== id);
+saveReminders(reminders);
+renderReminders();
+showMessageBox(reminderMessageBox, 'Reminder deleted.', 'success');
+};
+
+const renderReminders = () => {
+const reminders = loadReminders().sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+activeRemindersList.innerHTML = '';
+
+if (reminders.length === 0) {
+activeRemindersList.innerHTML = `<li style="font-size: 14px; color: var(--text-color); opacity: 0.7; border-bottom: none;">No active reminders set.</li>`;
+return;
+}
+
+reminders.forEach(r => {
+// Since we now store the local time string (YYYY-MM-DDTHH:MM:SS), this will correctly parse it as local time.
+const reminderTime = new Date(r.timestamp);
+const item = document.createElement('li');
+const dateStr = reminderTime.toLocaleDateString();
+const timeStr = reminderTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+item.innerHTML = `
+<span><strong>${r.title}</strong><br><small style="opacity: 0.8; color: var(--accent-yellow);">${dateStr} @ ${timeStr}</small></span>
+<button class="delete-reminder-button" data-id="${r.id}" style="background: var(--accent-red); color: var(--primary-bg); border: none; padding: 5px 10px; border-radius: 5px; cursor: pointer; font-size: 12px; font-weight: bold;">&times; Delete</button>
+`;
+activeRemindersList.appendChild(item);
+});
+
+document.querySelectorAll('.delete-reminder-button').forEach(button => {
+button.addEventListener('click', (e) => {
+const id = e.target.getAttribute('data-id');
+deleteReminder(id);
+});
+});
+};
+
+const handleReminderSubmit = (e) => {
+e.preventDefault();
+const title = document.getElementById('reminder-title').value.trim();
+const date = document.getElementById('reminder-date').value;
+const time = document.getElementById('reminder-time').value;
+
+if (!title || !date || !time) {
+showMessageBox(reminderMessageBox, 'Please fill out all fields.', 'error');
+return;
+}
+
+// This creates the standardized local time string (e.g., "2025-10-02T09:45:00")
+const datetimeString = `${date}T${time}:00`;
+
+// We create a Date object *only* for validation against the current time.
+const reminderTime = new Date(datetimeString);
+const now = new Date();
+
+if (reminderTime.getTime() <= now.getTime()) {
+showMessageBox(reminderMessageBox, 'Reminder time must be in the future.', 'error');
+return;
+}
+
+const newReminder = {
+id: Date.now().toString(),
+title: title,
+// CRITICAL FIX: We save the local time string directly, not the UTC-converted ISO string.
+timestamp: datetimeString,
+};
+
+let reminders = loadReminders();
+reminders.push(newReminder);
+saveReminders(reminders);
+
+e.target.reset();
+renderReminders();
+showMessageBox(reminderMessageBox, 'Reminder created and scheduled!', 'success');
+};
+
+// Function to show custom slide-in notification
+const showInAppNotification = (title, body) => {
+console.log(`[Notification Fired] Title: ${title}, Body: ${body}`); // Debugging log
+
+const notificationTitle = inAppNotification.querySelector('h4');
+const notificationMessage = document.getElementById('notification-message');
+
+// Ensure we don't try to show it if it's currently showing
+inAppNotification.classList.remove('show');
+
+// Slight delay to reset the animation state before showing
+setTimeout(() => {
+notificationTitle.innerHTML = `<span>🔔</span> ${title}`;
+notificationMessage.textContent = body;
+
+// Show the notification
+inAppNotification.classList.add('show');
+
+// Auto-hide after 5 seconds
+setTimeout(() => {
+inAppNotification.classList.remove('show');
+}, 5000);
+}, 50); // Small delay to force the CSS transition to re-fire
+}
+
+
+// Function to check reminders in the 1-second interval
+const checkIntervalReminders = () => {
+let reminders = loadReminders();
+// Get current time in milliseconds (based on the user's clock/timezone)
+const now = new Date().getTime();
+let remindersToKeep = [];
+let firedCount = 0;
+
+reminders.forEach(r => {
+// Parse the stored local time string into a Date object (which respects the user's timezone)
+const reminderTime = new Date(r.timestamp).getTime();
+
+// Check if the reminder time is in the past (or within the next second)
+if (reminderTime <= now + 1000) {
+console.log(`[Interval Checker] Reminder FIRED: "${r.title}"`);
+showInAppNotification("Reminder", r.title);
+firedCount++;
+} else {
+// Keep active future reminders
+remindersToKeep.push(r);
+}
+});
+
+// If any reminder fired, save the reduced list and re-render
+if (reminders.length !== remindersToKeep.length) {
+saveReminders(remindersToKeep);
+renderReminders();
+}
+};
+
+
+// --- TIMER AND DISPLAY UTILITIES ---
+
+const formatTimeLeft = (totalSeconds) => {
+if (totalSeconds < 0) return "0s";
+const hours = Math.floor(totalSeconds / 3600);
+const minutes = Math.floor((totalSeconds % 3600) / 60);
+const seconds = totalSeconds % 60;
+let parts = [];
+if (hours > 0) parts.push(`${hours}h`);
+if (minutes > 0) parts.push(`${minutes}m`);
+if (totalSeconds >= 0) {
+parts.push(`${seconds}s`);
+}
+return parts.join(" ");
+};
+const timeToMinutes = (timeStr) => {
+const parts = timeStr.split(":").map(Number);
+return parts[0] * 60 + parts[1];
+};
+
+const updateInfoSection = () => {
+const now = new Date();
+const timeStr = now.toLocaleTimeString("en-US", { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+const dateStr = (now.getMonth() + 1).toString().padStart(2, '0') + '/' + now.getDate().toString().padStart(2, '0') + '/' + now.getFullYear();
+const dayName = now.toLocaleDateString("en-US", { weekday: "long" });
+const schedule = schedules[dayName] || [];
+const currentMinutes = now.getHours() * 60 + now.getMinutes() + now.getSeconds() / 60;
+
+let parity = "Unknown Schedule";
+
+if (schedule.length > 0) {
+const firstStartMinutes = timeToMinutes(schedule[0].start);
+const lastEndMinutes = timeToMinutes(schedule[schedule.length - 1].end);
+let inSession = false;
+for (let block of schedule) {
+const startMinutes = timeToMinutes(block.start);
+const endMinutes = timeToMinutes(block.end);
+
+if (currentMinutes >= startMinutes && currentMinutes < endMinutes) {
+parity = dayName + " Schedule";
+inSession = true;
+break;
+}
+}
+if (!inSession) {
+if (currentMinutes < firstStartMinutes) {
+parity = "Before School";
+} else if (currentMinutes >= lastEndMinutes) {
+parity = "After School";
+} else {
+parity = "Passing Time";
+}
+}
+} else {
+parity = "Weekend / No School";
+}
+const infoEl = document.getElementById("info-section");
+if (infoEl) {
+infoEl.innerText = `Time: ${timeStr} | Date: ${dateStr} | ${parity}`;
+}
+};
+
+const updatePeriodTimer = () => {
+const now = new Date();
+const dayName = now.toLocaleDateString("en-US", { weekday: "long" });
+const schedule = schedules[dayName] || [];
+const currentMinutes = now.getHours() * 60 + now.getMinutes();
+let currentPeriod = "No Class";
+let totalSecondsLeft = -1;
+
+for (let block of schedule) {
+const startMinutes = timeToMinutes(block.start);
+const endMinutes = timeToMinutes(block.end);
+if (currentMinutes >= startMinutes && currentMinutes < endMinutes) {
+currentPeriod = block.period;
+totalSecondsLeft = (endMinutes * 60) - (currentMinutes * 60) - now.getSeconds();
+break;
+}
+}
+
+if (totalSecondsLeft === -1) {
+let nextTarget = null;
+
+if (schedule.length > 0) {
+const firstStartMinutes = timeToMinutes(schedule[0].start);
+const lastEndMinutes = timeToMinutes(schedule[schedule.length - 1].end);
+if (currentMinutes < firstStartMinutes) {
+nextTarget = new Date(now);
+const firstPeriodStart = schedule[0].start.split(":").map(Number);
+nextTarget.setHours(firstPeriodStart[0], firstPeriodStart[1], 0, 0);
+currentPeriod = "Before School";
+} else if (currentMinutes >= lastEndMinutes) {
+currentPeriod = "After School";
+let nextDay = new Date(now);
+nextDay.setDate(now.getDate() + 1);
+while (nextDay.getDay() === 0 || nextDay.getDay() === 6) { nextDay.setDate(nextDay.getDate() + 1); }
+nextTarget = nextDay;
+nextTarget.setHours(7, 20, 0, 0);
+} else {
+for (let i = 0; i < schedule.length; i++) {
+const block = schedule[i];
+const startMinutes = timeToMinutes(block.start);
+if (currentMinutes < startMinutes) {
+nextTarget = new Date(now);
+const blockStart = block.start.split(":").map(Number);
+nextTarget.setHours(blockStart[0], blockStart[1], 0, 0);
+currentPeriod = `Next: ${block.period}`;
+break;
+}
+}
+}
+} else {
+currentPeriod = "Weekend/Break";
+let nextDay = new Date(now);
+let dayOfWeek = nextDay.getDay();
+let daysUntilMonday = (8 - dayOfWeek) % 7;
+if (daysUntilMonday === 0) daysUntilMonday = 7;
+nextDay.setDate(nextDay.getDate() + daysUntilMonday);
+nextTarget = nextDay;
+nextTarget.setHours(7, 20, 0, 0);
+}
+
+if (nextTarget) {
+totalSecondsLeft = Math.floor((nextTarget.getTime() - now.getTime()) / 1000);
+if (totalSecondsLeft < 0) totalSecondsLeft = 0;
+}
+}
+
+let timeLeft = formatTimeLeft(totalSecondsLeft);
+const timerContainer = document.getElementById("period-timer");
+let timerTextSpan = document.getElementById("timer-text");
+
+if (!timerTextSpan) {
+timerContainer.innerHTML = `${currentPeriod} – <span id="timer-text" class="timer-text">${timeLeft} left</span>`;
+timerTextSpan = document.getElementById("timer-text");
+} else {
+timerContainer.firstChild.nodeValue = `${currentPeriod} – `;
+timerTextSpan.innerText = `${timeLeft} left`;
+}
+
+timerTextSpan.classList.remove('timer-active');
+timerTextSpan.style.color = 'var(--text-color)';
+
+if (totalSecondsLeft > 0 && currentPeriod !== "After School" && currentPeriod !== "Weekend/Break") {
+timerTextSpan.classList.add('timer-active');
+const fifteenMinutesInSeconds = 15 * 60;
+
+if (totalSecondsLeft > fifteenMinutesInSeconds) {
+timerTextSpan.style.color = 'var(--accent-green)';
+} else {
+timerTextSpan.style.color = 'var(--accent-red)';
+}
+}
+updateInfoSection();
+// IMPORTANT: Call the new check function every second
+checkIntervalReminders();
+};
+
+const showReminderModal = () => {
+renderReminders();
+reminderModal.classList.add('show');
+document.body.style.overflow = 'hidden';
+};
+const hideReminderModal = () => {
+reminderModal.classList.remove('show');
+document.body.style.overflow = '';
+};
+
+
+// --- DOM READY AND LISTENERS ---
+document.addEventListener('DOMContentLoaded', () => {
+
+// 0. Load Custom Names and Populate Forms
+loadPeriodNames();
+populatePeriodForm();
+loadLunchNames();
+lunchNamesForm.addEventListener('submit', handleLunchFormSubmit);
+
+// 1. Load Theme Preference
+loadModePreference();
+
+// 2. Attach theme-related event listeners
+darkModeButton.addEventListener('click', () => saveModePreference('dark'));
+lightModeButton.addEventListener('click', () => saveModePreference('light'));
+
+// 3. Start the timer loop and lunch display update
+updatePeriodTimer();
+updateLunchDisplay();
+// The main interval now also runs the reminder check
+setInterval(() => {
+updatePeriodTimer();
+updateLunchDisplay();
+}, 1000);
+
+// 4. Tab Switching
+document.querySelectorAll(".left-box button").forEach(button => {
+button.addEventListener("click", () => {
+const target = button.getAttribute("data-tab");
+document.querySelectorAll(".left-box button").forEach(btn => btn.classList.remove("active"));
+button.classList.add("active");
+tabs.forEach(tab => {
+tab.classList.remove("active");
+if (tab.id === target) {
+tab.classList.add("active");
+}
+});
+});
+});
+if (homeButton) homeButton.classList.add("active");
+
+// 5. Header Scroll Hide/Show
+let lastScrollY = window.scrollY;
+const header = document.querySelector('.header');
+const headerHeight = header.offsetHeight;
+window.addEventListener('scroll', () => {
+const currentScrollY = window.scrollY;
+if (currentScrollY > lastScrollY && currentScrollY > headerHeight) {
+header.style.top = `-${headerHeight}px`;
+} else {
+header.style.top = '0';
+}
+lastScrollY = currentScrollY;
+});
+
+// 6. Image Preview (Placeholder for lunch items)
+const fetchImage = async (food) => {
+return `https://placehold.co/300x300/4cc9f0/1a1b2f?text=${encodeURIComponent(food)}`;
+};
+const preview = document.getElementById("preview");
+document.querySelectorAll(".info p").forEach(item => {
+item.addEventListener("mouseenter", async (e) => {
+const food = e.target.getAttribute("data-food");
+const imgUrl = await fetchImage(food);
+preview.src = imgUrl;
+preview.style.display = "block";
+});
+item.addEventListener("mousemove", (e) => {
+preview.style.left = (e.pageX + 20) + "px";
+preview.style.top = (e.pageY + 20) + "px";
+});
+item.addEventListener("mouseleave", () => {
+preview.style.display = "none";
+});
+});
+
+// 7. Modal Logic
+const legalModal = document.getElementById("legal-modal");
+const openModalLink = document.getElementById("open-legal-modal");
+const closeModalButton = document.getElementById("close-modal-button");
+const body = document.body;
+const showLegalModal = () => { legalModal.classList.add('show'); body.style.overflow = 'hidden'; };
+const hideLegalModal = () => { legalModal.classList.remove('show'); body.style.overflow = ''; };
+if (openModalLink) openModalLink.addEventListener('click', showLegalModal);
+if (closeModalButton) closeModalButton.addEventListener('click', hideLegalModal);
+if (legalModal) legalModal.addEventListener('click', (e) => {
+if (e.target === legalModal) { hideLegalModal(); }
+});
+
+// 8. Reminder Maker Logic
+// Click handler for the card itself (opens modal)
+if (notificationsCard) notificationsCard.addEventListener('click', showReminderModal);
+// Click handler for the TEST button (fires animation)
+if (testNotificationButton) {
+testNotificationButton.addEventListener('click', (e) => {
+e.stopPropagation(); // Stop the event from propagating to the card and opening the modal
+showInAppNotification("Test Notification", "This should slide in smoothly!");
+});
+}
+if (closeReminderModalButton) closeReminderModalButton.addEventListener('click', hideReminderModal);
+if (reminderModal) reminderModal.addEventListener('click', (e) => {
+if (e.target === reminderModal) { hideReminderModal(); }
+});
+if (reminderForm) reminderForm.addEventListener('submit', handleReminderSubmit);
+});
+</script>
+</body>
+</html>
