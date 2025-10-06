@@ -569,15 +569,235 @@ font-size: 14px;
 </div>
 
 
-<div class="card"><span class="icon"> 🔑 </span><h3>Account</h3><p>Privacy and security options.</p></div>
-<div class="card"><span class="icon"> ⚙️ </span><h3>Display</h3><p>Adjust font size and layout.</p></div>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Settings Page</title>
+    <style>
+        /* Basic styling */
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f9;
+            color: #333;
+            margin: 0;
+            padding: 0;
+        }
+
+        .container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            flex-direction: column;
+        }
+
+        .cards {
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+        }
+
+        .card {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            cursor: pointer;
+            width: 200px;
+        }
+
+        .card:hover {
+            background-color: #f0f0f0;
+        }
+
+        .icon {
+            font-size: 2rem;
+        }
+
+        /* Modal styles */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            display: none;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal-content {
+            background-color: white;
+            padding: 30px;
+            border-radius: 10px;
+            max-width: 600px;
+            width: 80%;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+        }
+
+        .close-button {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            position: absolute;
+            top: 10px;
+            right: 10px;
+        }
+
+        /* Form styling */
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-group label {
+            display: block;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 10px;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+        }
+
+        .form-group input[type="submit"] {
+            cursor: pointer;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            font-size: 1rem;
+        }
+
+        .form-group input[type="submit"]:hover {
+            background-color: #45a049;
+        }
+
+        /* Confirmation Message */
+        .confirmation-message {
+            color: green;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <section>
+        <div class="cards">
+            <!-- Account Card -->
+            <div class="card" id="account-card">
+                <span class="icon"> 🔑 </span>
+                <h3>Account</h3>
+                <p>Privacy and security options.</p>
+            </div>
+
+            <!-- Display Card -->
+            <div class="card" id="display-card">
+                <span class="icon"> ⚙️ </span>
+                <h3>Display</h3>
+                <p>Adjust font size and layout.</p>
+            </div>
+        </div>
+
+        <!-- Account Settings Form (Modal) -->
+        <div id="account-modal" class="modal-overlay">
+            <div class="modal-content">
+                <button class="close-button" id="close-account-modal-button">&times;</button>
+                <h1>Account Settings</h1>
+
+                <!-- Change Username -->
+                <div class="form-group">
+                    <label for="username">Username</label>
+                    <input type="text" id="username" placeholder="New Username" />
+                </div>
+
+                <!-- Change Password -->
+                <div class="form-group">
+                    <label for="password">Password</label>
+                    <input type="password" id="password" placeholder="New Password" />
+                </div>
+
+                <!-- Change Profile Picture -->
+                <div class="form-group">
+                    <label for="profile-picture">Profile Picture</label>
+                    <input type="file" id="profile-picture" />
+                </div>
+
+                <div id="confirmation-message" class="confirmation-message"></div>
+
+                <!-- Save Changes Button -->
+                <div class="form-group">
+                    <input type="submit" value="Save Changes" id="save-changes" />
+                </div>
+            </div>
+        </div>
+
+    </section>
 </div>
-</section>
-</div>
-<div id="legal-modal" class="modal-overlay">
-<div class="modal-content">
-<button class="close-button" id="close-modal-button">&times;</button>
-<h1>Legal Disclaimer <span style="font-size: 14px; color: var(--text-color);"> (Last Updated: October 2nd, 2025)</span></h1>
+
+<!-- JavaScript to toggle modal and handle form actions -->
+<script>
+    // Elements
+    const accountCard = document.getElementById('account-card');
+    const displayCard = document.getElementById('display-card');
+    const accountModal = document.getElementById('account-modal');
+    const closeAccountModalButton = document.getElementById('close-account-modal-button');
+    const saveChangesButton = document.getElementById('save-changes');
+    const confirmationMessage = document.getElementById('confirmation-message');
+    const usernameInput = document.getElementById('username');
+    const passwordInput = document.getElementById('password');
+    const profilePictureInput = document.getElementById('profile-picture');
+
+    // Open the Account Settings Modal
+    accountCard.addEventListener('click', () => {
+        accountModal.style.display = 'flex';
+    });
+
+    // Close the Account Settings Modal
+    closeAccountModalButton.addEventListener('click', () => {
+        accountModal.style.display = 'none';
+    });
+
+    // Save changes handler
+    saveChangesButton.addEventListener('click', () => {
+        const username = usernameInput.value;
+        const password = passwordInput.value;
+        const profilePicture = profilePictureInput.files[0];
+
+        // Simple validation
+        if (username === '' || password === '') {
+            alert('Username and Password cannot be empty.');
+            return;
+        }
+
+        // Simulate saving the changes (e.g., via an API call)
+        // For now, just display a confirmation message.
+        confirmationMessage.textContent = 'Your account settings have been updated successfully!';
+        confirmationMessage.style.display = 'block';
+
+        // Clear the input fields
+        usernameInput.value = '';
+        passwordInput.value = '';
+        profilePictureInput.value = '';
+    });
+
+    // Display settings card (currently no action, can be added later)
+    displayCard.addEventListener('click', () => {
+        alert('Display settings clicked: Adjust font size and layout.');
+    });
+</script>
+
+</body>
+</html>
+
+
 
 <div class="disclaimer-point">
 <strong>1. General Information & Accuracy</strong>
@@ -1386,4 +1606,5 @@ if (reminderForm) reminderForm.addEventListener('submit', handleReminderSubmit);
 });
 </script>
 </body>
+
 </html>
