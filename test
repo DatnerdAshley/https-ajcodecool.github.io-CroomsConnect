@@ -44,7 +44,7 @@ margin: 0;
 font-family: "Segoe UI", Arial, sans-serif;
 background: var(--primary-bg);
 color: var(--text-color);
-padding-top: 65px;
+padding: 65px 280px 0 200px;
 overflow-x: hidden;
 transition: background-color 0.3s, color 0.3s;
 }
@@ -100,12 +100,18 @@ white-space: nowrap;
 }
 /* NAVIGATION BUTTONS */
 .left-box {
+position: fixed;
+left: 0;
+top: 65px;
+width: 200px;
+height: calc(100vh - 65px);
 display: flex;
-justify-content: center;
-flex-wrap: wrap;
+flex-direction: column;
 gap: 15px;
-margin: 25px auto;
-max-width: 900px;
+padding: 20px;
+background: var(--content-bg);
+border-right: 1px solid var(--border-color);
+overflow-y: auto;
 }
 .left-box button {
 background: var(--content-bg);
@@ -158,14 +164,14 @@ display: block;
 section, .right-box {
 background: var(--content-bg);
 border-radius: var(--radius);
-padding: 25px;
-margin: 30px auto;
+padding: 30px;
+margin: 0 auto;
 max-width: 900px;
 box-shadow: var(--shadow);
 border: 1px solid var(--border-color);
 position: relative;
 overflow: hidden;
-transition: background-color 0.3s, border-color 0.3s;
+transition: all 0.3s ease;
 }
 /* SQUIGGLES INSIDE CARDS (Less visible) */
 section::before {
@@ -196,14 +202,15 @@ border: 1px solid var(--border-color);
 padding: 20px;
 border-radius: var(--radius);
 box-shadow: 0 2px 8px rgba(0,0,0,0.2); /* Slightly weaker card shadow */
-transition: 0.3s;
+transition: all 0.3s ease;
 position: relative;
 overflow: hidden;
 text-align: center;
 }
 .card:hover {
-transform: translateY(-5px) scale(1.03);
-box-shadow: var(--shadow);
+transform: translateY(-8px) scale(1.05);
+box-shadow: 0 8px 25px rgba(0,0,0,0.3);
+background: linear-gradient(135deg, var(--card-bg-subtle), rgba(76, 201, 240, 0.05));
 }
 .card .icon {
 font-size: 35px;
@@ -212,21 +219,31 @@ display: block;
 }
 /* RIGHT BOX */
 .right-box {
+position: fixed;
+right: 0;
+top: 65px;
 width: 280px;
-margin: 0 auto;
-animation: fadeIn 1s ease;
+height: calc(100vh - 65px);
+display: flex;
+flex-direction: column;
+gap: 15px;
+padding: 20px;
+background: var(--content-bg);
+border-left: 1px solid var(--border-color);
+overflow-y: auto;
 }
 .right-box h2 {
 text-align: center;
 color: var(--accent-yellow);
 }
 .right-box .section {
-margin-top: 10px;
+margin-top: 0;
 background: var(--card-bg-subtle);
 padding: 10px;
 border-radius: var(--radius);
 text-align: center;
 font-weight: bold;
+border: 1px solid var(--border-color);
 transition: background-color 0.3s;
 }
 .right-box .info p {
@@ -234,9 +251,7 @@ margin: 8px 0;
 cursor: pointer;
 transition: color 0.2s;
 }
-.right-box .info p:hover {
-color: var(--accent-blue);
-}
+
 /* FOOTER */
 footer {
 text-align: center;
@@ -457,7 +472,7 @@ font-size: 14px;
 <p>Your student hub with resources, schedules, and tools.</p>
 <div class="card-grid">
 <div class="card"><span class="icon"> 📰 </span><h3>News</h3><p>Latest announcements from campus.</p></div>
-<div class="card" onclick="window.location.href='events.html'" style="cursor: pointer;">
+<div class="card">
 <span class="icon"> 📅 </span>
 <h3>Events</h3>
 <p>See what’s happening this week.</p>
@@ -1156,6 +1171,16 @@ const parts = timeStr.split(":").map(Number);
 return parts[0] * 60 + parts[1];
 };
 
+const calculateWeekendTarget = (now) => {
+let nextDay = new Date(now);
+let dayOfWeek = nextDay.getDay();
+let daysUntilMonday = (8 - dayOfWeek) % 7;
+if (daysUntilMonday === 0) daysUntilMonday = 7;
+nextDay.setDate(nextDay.getDate() + daysUntilMonday);
+nextDay.setHours(7, 20, 0, 0);
+return nextDay;
+};
+
 const updateInfoSection = () => {
 const now = new Date();
 const timeStr = now.toLocaleTimeString("en-US", { hour: '2-digit', minute: '2-digit', second: '2-digit' });
@@ -1249,13 +1274,7 @@ break;
 }
 } else {
 currentPeriod = "Weekend/Break";
-let nextDay = new Date(now);
-let dayOfWeek = nextDay.getDay();
-let daysUntilMonday = (8 - dayOfWeek) % 7;
-if (daysUntilMonday === 0) daysUntilMonday = 7;
-nextDay.setDate(nextDay.getDate() + daysUntilMonday);
-nextTarget = nextDay;
-nextTarget.setHours(7, 20, 0, 0);
+nextTarget = calculateWeekendTarget(now);
 }
 
 if (nextTarget) {
@@ -1434,6 +1453,40 @@ confirmationMessage.style.color = 'var(--accent-green)';
 setTimeout(() => {
 confirmationMessage.style.display = 'none';
 }, 3000);
+});
+
+// Drag functionality for middle card (Events card)
+const middleCard = document.querySelector('#home .card-grid .card:nth-child(2)');
+let isDragging = false;
+let hasDragged = false;
+let dragOffsetX, dragOffsetY;
+
+middleCard.addEventListener('mousedown', (e) => {
+    isDragging = true;
+    hasDragged = false;
+    dragOffsetX = e.clientX - middleCard.offsetLeft;
+    dragOffsetY = e.clientY - middleCard.offsetTop;
+    middleCard.style.position = 'absolute';
+    middleCard.style.zIndex = '1000';
+    e.preventDefault();
+});
+
+document.addEventListener('mousemove', (e) => {
+    if (isDragging) {
+        hasDragged = true;
+        middleCard.style.left = (e.clientX - dragOffsetX) + 'px';
+        middleCard.style.top = (e.clientY - dragOffsetY) + 'px';
+    }
+});
+
+document.addEventListener('mouseup', () => {
+    isDragging = false;
+});
+
+middleCard.addEventListener('click', () => {
+    if (!hasDragged) {
+        window.location.href = 'events.html';
+    }
 });
 });
 </script>
